@@ -1,0 +1,1 @@
+用法: /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/SNP_calling/extract_barcodes_and_split_bam.sh barcode.txt 输出目录

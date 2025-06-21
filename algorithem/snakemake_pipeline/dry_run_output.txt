@@ -1,0 +1,144 @@
+host: cz-server
+Building DAG of jobs...
+Error: Directory cannot be locked. This usually means that another Snakemake instance is running on this directory. Another possibility is that a previous run exited unexpectedly.
+Job stats:
+job                                          count
+-----------------------------------------  -------
+CCID_all                                         1
+SNP_distribution_per_gene                        1
+read_mapping_and_bam_sorting_sub_pipeline        2
+read_separation_sub_pipeline                     2
+split_yaml_batches                               2
+total                                            8
+
+
+[Thu Apr 10 15:38:39 2025]
+rule SNP_distribution_per_gene:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/metadata/Tcell_dynamics.processed_External.vcf, /mnt/nvme/home/chris/resources/genomes/Human/gencode.v42.primary_assembly.annotation.nochr.rRNA.gtf
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output/snp_counts_per_gene.csv, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output/snp_count_frequency_distribution.pdf
+    jobid: 7
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output/snp_count_frequency_distribution.pdf
+    resources: tmpdir=<TBD>
+
+
+        Rscript /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/DoubletSeparation_SNPbased_v1.0/Doublets_Separation_Distribution_of_SNPs_in_genes_v0.2.R --vcf /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/metadata/Tcell_dynamics.processed_External.vcf --gtf /mnt/nvme/home/chris/resources/genomes/Human/gencode.v42.primary_assembly.annotation.nochr.rRNA.gtf         --outputDir /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output 
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule split_yaml_batches:
+    input: /mnt/data/user/zhouhui/CCID_pipeline2.0/config/Tcell_dynamics_testing.yaml
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+    jobid: 5
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+    wildcards: i=2
+    resources: tmpdir=<TBD>
+
+
+        Rscript /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/basic/split_yaml_batches.R -i /mnt/data/user/zhouhui/CCID_pipeline2.0/config/Tcell_dynamics_testing.yaml -o /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule split_yaml_batches:
+    input: /mnt/data/user/zhouhui/CCID_pipeline2.0/config/Tcell_dynamics_testing.yaml
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml
+    jobid: 2
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml
+    wildcards: i=1
+    resources: tmpdir=<TBD>
+
+
+        Rscript /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/basic/split_yaml_batches.R -i /mnt/data/user/zhouhui/CCID_pipeline2.0/config/Tcell_dynamics_testing.yaml -o /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule read_mapping_and_bam_sorting_sub_pipeline:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/split_bam_output/Tsc_subset.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/split_bam_output/Nalm6sc_subset.bam
+    jobid: 6
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam; Input files updated by another job: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml; Set of input files has changed since last execution; Code has changed since last execution; Params have changed since last execution: Union of exclusive params before and now across all output: before: '/mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.smk' now: '/mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh' 
+    wildcards: i=2
+    resources: tmpdir=<TBD>
+
+
+        chmod +x /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh
+        /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule read_mapping_and_bam_sorting_sub_pipeline:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/split_bam_output/Tsc_subset.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/split_bam_output/Nalm6sc_subset.bam
+    jobid: 3
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam; Input files updated by another job: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml; Set of input files has changed since last execution; Code has changed since last execution; Params have changed since last execution: Union of exclusive params before and now across all output: before: '/mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.smk' now: '/mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh' 
+    wildcards: i=1
+    resources: tmpdir=<TBD>
+
+
+        chmod +x /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh
+        /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_mapping_and_bam_sorting.sh /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule read_separation_sub_pipeline:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/metadata/Tcell_dynamics.processed_External.vcf, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/final_read_assignment_result_sorted.txt, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.Tsc_readIDs_separated_bam.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.Nalm6sc_readIDs_separated_bam.bam
+    jobid: 1
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds; Input files updated by another job: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam
+    wildcards: i=1
+    resources: tmpdir=<TBD>
+
+
+        chmod +x /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_separation_subworkflow.sh
+        /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_separation_subworkflow.sh /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch1_config.yaml
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule read_separation_sub_pipeline:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/metadata/Tcell_dynamics.processed_External.vcf, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam
+    output: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/final_read_assignment_result_sorted.txt, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.Tsc_readIDs_separated_bam.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.Nalm6sc_readIDs_separated_bam.bam
+    jobid: 4
+    reason: Missing output files: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds; Input files updated by another job: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/T_cell_dynamics_testing.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+    wildcards: i=2
+    resources: tmpdir=<TBD>
+
+
+        chmod +x /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_separation_subworkflow.sh
+        /mnt/data/user/zhouhui/CCID_pipeline2.0/algorithem/snakemake_pipeline/subworkflow/read_separation_subworkflow.sh /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/sub_config_files/batch2_config.yaml
+        
+
+[Thu Apr 10 15:38:39 2025]
+rule CCID_all:
+    input: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output/snp_count_frequency_distribution.pdf
+    jobid: 0
+    reason: Input files updated by another job: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch2_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/SNP_calling_output/snp_count_frequency_distribution.pdf, /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results/batch1_results/read_separation_results/T_cell_dynamics_testing.separated_counts.rds
+    resources: tmpdir=<TBD>
+
+Job stats:
+job                                          count
+-----------------------------------------  -------
+CCID_all                                         1
+SNP_distribution_per_gene                        1
+read_mapping_and_bam_sorting_sub_pipeline        2
+read_separation_sub_pipeline                     2
+split_yaml_batches                               2
+total                                            8
+
+Reasons:
+    (check individual jobs above for details)
+    code has changed since last execution:
+        read_mapping_and_bam_sorting_sub_pipeline
+    input files updated by another job:
+        CCID_all, read_mapping_and_bam_sorting_sub_pipeline, read_separation_sub_pipeline
+    output files have to be generated:
+        SNP_distribution_per_gene, read_mapping_and_bam_sorting_sub_pipeline, read_separation_sub_pipeline, split_yaml_batches
+    params have changed since last execution:
+        read_mapping_and_bam_sorting_sub_pipeline
+    set of input files has changed since last execution:
+        read_mapping_and_bam_sorting_sub_pipeline
+Some jobs were triggered by provenance information, see 'reason' section in the rule displays above.
+If you prefer that only modification time is used to determine whether a job shall be executed, use the command line option '--rerun-triggers mtime' (also see --help).
+If you are sure that a change for a certain output file (say, <outfile>) won't change the result (e.g. because you just changed the formatting of a script or environment definition), you can also wipe its metadata to skip such a trigger via 'snakemake --cleanup-metadata <outfile>'. 
+Rules with provenance triggered jobs: read_mapping_and_bam_sorting_sub_pipeline
+
+
+This was a dry-run (flag -n). The order of jobs does not reflect the order of execution.

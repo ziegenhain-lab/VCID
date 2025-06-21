@@ -1,0 +1,292 @@
+configfile: "../../config/sum_config.yaml"
+# 1.Read the config file ------------------------------------------------------
+import os
+import yaml
+
+
+# 注释：使用相对位置传入参数
+#args = sys.argv
+#Configfile_pair = args[args.index("--config") + 1]
+#Configfile = Configfile_pair.split('=')[1]
+
+#Configfile = config["sum_config"]
+#with open(Configfile, 'r') as f:
+#    config = yaml.safe_load(f)
+
+Configfile = "../../config/sum_config.yaml"
+PROJECT_NAME = config['project']
+batch_number = config['Multi_batches']
+Data_results_path = config['out_dir'] 
+Program_folder = config['pipeline_path']
+CELLTYPE1 = config["celltype1"]
+CELLTYPE2 = config["celltype2"]
+CELLTYPE3 = config["celltype3"]
+Differetial_SNPs_from_other_source = config['Differetial_SNPs_from_other_source']
+BAM_file_from_other_source = config['BAM_file_from_other_source']
+
+
+Configfile_folder = os.path.join(Program_folder, "config")
+Conda_env_path = os.path.join(Program_folder, "conda_config")
+COMMON_VCID_COFIG = os.path.join(Conda_env_path, "VCID_environment.yaml")
+algorithem_path = os.path.join(Program_folder, "algorithem", "snakemake_pipeline")
+
+# 2. Output files  ----------------------------------------------
+
+COMBINED_BAM_OUTPUT_DIR = os.path.join(Data_results_path, "combined_bam")
+os.makedirs(COMBINED_BAM_OUTPUT_DIR, exist_ok=True)
+
+SNP_CALLING_OUTPUT_DIR = os.path.join(Data_results_path, "SNP_calling_output")
+os.makedirs(SNP_CALLING_OUTPUT_DIR, exist_ok=True)
+
+SUB_CONFIG_FILES = os.path.join(Data_results_path, "sub_config_files")
+os.makedirs(SUB_CONFIG_FILES, exist_ok=True)
+
+
+# 注释：此rule是为了告诉下面的rule我需要生成sub yaml文件；目的是为了实现并行化【√】
+# 看上去这个rule是多余的，因为下面的rule已经实现了这个功能
+rule split_yaml_batches_resulting:
+    input:
+        sub_config_files = expand("{folder}/batch{batch_num}_config.yaml",
+                            folder=SUB_CONFIG_FILES,
+                            batch_num=range(1, int(batch_number) + 1))      
+
+
+# 3.代码 ----------------------------------------------
+# 注释：此rule的作用是将总yaml文件分拆成多个sub yaml文件，以便每个子工作流使用【√】
+rule split_yaml_batches:
+    input:
+        config_file=Configfile
+    output:
+        os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        script=os.path.join(algorithem_path, "basic", "split_yaml_batches.R"),
+        output_dir=SUB_CONFIG_FILES
+    shell:
+        """
+        Rscript {params.script} -i {input.config_file} -o {params.output_dir}
+        """
+
+
+# 注释：此rule是为了告诉下面的rule我需要生成哪些文件；目的是为了实现并行化【√】
+# 看上去这个rule是多余的，因为下面的rule CCID_all已经实现了这个功能
+rule zUMIs_resulting:
+    input:
+        zUMIs_bam_output = expand("{results_path}/batch{batch_num}_results/{project}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam", 
+                           batch_num=range(1, int(batch_number) + 1),
+                           results_path = Data_results_path,
+                           project=PROJECT_NAME)
+
+rule run_zUMIs:
+    input:
+        os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml")
+    output:
+        zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", 
+                                f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam")
+    params:
+        script = os.path.join(config['zUMIs_directory'], "zUMIs.sh"),
+    shell:
+        """
+        echo "Running zUMIs..."
+        chmod +x {params.script}
+        bash {params.script} -c -y {input}
+        echo "Indexing zUMIs BAM..."
+        if [ ! -f {output.zUMIs_bam_output}.bai ]; then
+            samtools index {output.zUMIs_bam_output}
+        fi
+        """
+
+
+
+# 注释：子工作流，对不同batch的数据进行read mapping 和 single cell bam文件的提取
+rule bam_combining_and_splitting_sub_pipeline:
+    input:
+        zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", 
+                                f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"),
+        config_file = os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml")
+    output:
+        split_bam_celltype1 = os.path.join(Data_results_path, "batch{i}_results", 
+                                "split_bam_output", f"{CELLTYPE1}_subset.bam"),
+        split_bam_celltype2 = os.path.join(Data_results_path, "batch{i}_results", 
+                                "split_bam_output", f"{CELLTYPE2}_subset.bam")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        script = os.path.join(algorithem_path, "subworkflow", "read_mapping_and_bam_sorting.sh"),
+        #smk_subworkflow = os.path.join(algorithem_path, "subworkflow", "read_mapping_and_bam_sorting.smk")
+    shell:
+        """
+        chmod +x {params.script}
+        {params.script} {input.config_file} {input.zUMIs_bam_output}
+        """
+        # snakemake --snakefile {params.smk_subworkflow} --config config_file={input} --cores 40 
+        # 注释：以前的版本使用snakemake，所以出现了并行的时候多个input占用一个snakemake.subworkflow的情况，导致了file lock；
+        # 因此新版的改进直接使用bash作为subworkflow的执行方式，避免了上述的问题
+
+rule bam_combining_and_splitting_sub_pipeline_resulting:
+    input:
+        split_bam_celltype1 = expand("{results_path}/batch{batch_num}_results/split_bam_output/{celltype}_subset.bam",
+                            batch_num=range(1, int(batch_number) + 1),
+                            results_path=Data_results_path,
+                            celltype=CELLTYPE1),
+        split_bam_celltype2 = expand("{results_path}/batch{batch_num}_results/split_bam_output/{celltype}_subset.bam",
+                            batch_num=range(1, int(batch_number) + 1),
+                            results_path=Data_results_path,
+                            celltype=CELLTYPE2)
+
+# 注释：将不同batch的single cell bam文件进行合并
+rule celltype_specific_bam_combining:
+    input:
+        # 对 celltype1 进行 BAM 合并
+        celltype1_bams = expand(os.path.join(Data_results_path, "batch{batch}_results", "split_bam_output", f"{CELLTYPE1}_subset.bam"),
+                                batch=range(1, int(batch_number) + 1)),
+        # 对 celltype2 进行 BAM 合并
+        celltype2_bams = expand(os.path.join(Data_results_path, "batch{batch}_results", "split_bam_output", f"{CELLTYPE2}_subset.bam"),
+                                batch=range(1, int(batch_number) + 1))
+    output:
+        # 合并后的 BAM 文件（celltype1 和 celltype2 分别有不同的输出文件）
+        celltype1_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE1}_all_batches.bam"),
+        celltype2_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE2}_all_batches.bam")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        celltype1_bams_str=lambda wildcards, input: " ".join(input.celltype1_bams),
+        celltype2_bams_str=lambda wildcards, input: " ".join(input.celltype2_bams)
+    shell:
+        # 注释：这一步将多个batch的bam文件合并，虽然会存在不同batch中的cell barcode重复的情况，
+        # 但是这一步仅仅是为了SNP calling准备数据，而SNP calling只关心细胞类型而不关心barcode
+        """
+        samtools merge -o {output.celltype1_bams_merged} {params.celltype1_bams_str}
+        samtools merge -o {output.celltype2_bams_merged} {params.celltype2_bams_str}
+        """
+
+rule SNP_calling_step1_bamaddrg:
+    input:
+        bam_celltype1 = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE1}_all_batches.bam"),
+        bam_celltype2 = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE2}_all_batches.bam")
+    output:
+        bamaddrg_bam = os.path.join(Data_results_path, "combined_bam", "bamaddrg_output.bam")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        celltype1 = CELLTYPE1,
+        celltype2 = CELLTYPE2
+    shell:
+        """
+        [ -f {input.bam_celltype1}.bai ] || samtools index {input.bam_celltype1}
+        [ -f {input.bam_celltype2}.bai ] || samtools index {input.bam_celltype2}
+        bamaddrg -b {input.bam_celltype1} -s {params.celltype1} -r group.{params.celltype1} \
+         -b {input.bam_celltype2} -s {params.celltype2} -r group.{params.celltype2} \
+         > {output.bamaddrg_bam}
+        samtools index {output.bamaddrg_bam}
+        """
+
+rule SNP_calling_step2_freebayes:
+    input:
+        bamaddrg_bam = os.path.join(Data_results_path, "combined_bam", "bamaddrg_output.bam"),
+        genome = config['reference']['reference_genome'],
+        genome_index = config['reference']['reference_genome'] + ".bai"
+    output:
+        vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.vcf"),
+        tmp_region = os.path.join(SNP_CALLING_OUTPUT_DIR, "tmpregions")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        generate_regions_script = os.path.join(algorithem_path, "SNP_calling", "fasta_generate_regions.py")
+    shell:
+        """
+        {params.generate_regions_script} {input.genome_index} 100000 > {output.tmp_region} 
+        freebayes-parallel {output.tmp_region} 40 \
+            --min-mapping-quality 10 --min-base-quality 20 --min-alternate-count 5 -f {input.genome} \
+            {input.bamaddrg_bam} > {output.vcf}
+        """
+
+rule vcf_processing:
+    input:
+       vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.vcf")
+    output:
+       vcf_gz = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.vcf.gz"),
+       vcf_snponly = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}._snponly.vcf.gz"),
+       vcf_snponly_simple = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}._snponly_simple.vcf.gz"),
+       vcf_0_1 = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}._snponly_0_1.vcf.gz"),
+       processed_vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.processed.vcf.gz")
+    conda:
+        COMMON_VCID_COFIG
+    shell:
+        """
+        bcftools view {input.vcf} -Oz -o {output.vcf_gz}
+        bcftools filter -e 'TYPE!="snp"' -o {output.vcf_snponly} {output.vcf_gz}
+        bcftools annotate -x INFO,^FORMAT/GT, -o {output.vcf_snponly_simple} {output.vcf_snponly}
+        bcftools filter -e 'GT[0] != "0/0" && GT[0] != "0/1" && GT[0] != "1/0" && GT[0] != "1/1" || GT[1] != "0/0" && GT[1] != "0/1" && GT[1] != "1/0" && GT[1] != "1/1"' \
+            -o {output.vcf_0_1} {output.vcf_snponly_simple}
+        bcftools filter -e '(GT[0] == "0/1" && GT[1] == "0/1") || (GT[0] == "0/0" && GT[1] == "0/0") || (GT[0] == "1/1" && GT[1] == "1/1")' \
+            -o {output.processed_vcf} {output.vcf_0_1}
+        """
+
+rule SNP_distribution_per_gene:
+    input:
+        vcf = (os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.processed.vcf.gz")
+               if not Differetial_SNPs_from_other_source else Differetial_SNPs_from_other_source),
+        gtf = config['reference']['GTF_file']
+    params:
+        output_dir = SNP_CALLING_OUTPUT_DIR,
+        script = os.path.join(algorithem_path, "DoubletSeparation_SNPbased_v1.0", "Doublets_Separation_Distribution_of_SNPs_in_genes_v0.2.R")
+    output:
+        snp_counts_per_gene = os.path.join(SNP_CALLING_OUTPUT_DIR, "snp_counts_per_gene.csv"),
+        counts_distribution_plot = os.path.join(SNP_CALLING_OUTPUT_DIR, "snp_count_frequency_distribution.pdf")
+    conda:
+        COMMON_VCID_COFIG
+    shell:
+        """
+        Rscript {params.script} --vcf {input.vcf} --gtf {input.gtf} \
+        --outputDir {params.output_dir} 
+        """   
+
+
+# 注释：子工作流，对不同batch的数据进行read separation;如果有其他来源的差异SNP，即则Differetial_SNPs_from_other_source非空，则使用该SNP进行read separation
+# 注释：其实这一个代码中已经有测试了...即readseparation_barcode_list1可供选择
+rule read_separation_sub_pipeline:
+    input:
+        yaml = os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml"),
+        vcf = (os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.processed.vcf.gz")
+               if not Differetial_SNPs_from_other_source else Differetial_SNPs_from_other_source),
+        zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"
+                            if not BAM_file_from_other_source else BAM_file_from_other_source)
+    output:
+        readcount_matrix_rds_path = os.path.join(Data_results_path, "batch{i}_results", 
+                        "read_separation_results","chunk_combined_output", "separated_counts.rds"),
+        read_assignment_result = os.path.join(Data_results_path, "batch{i}_results", 
+                        "read_separation_results","chunk_combined_output", "all_out_read.txt"),
+        celltype1_separated_bam_path = os.path.join(Data_results_path, "batch{i}_results", 
+                        "read_separation_results","chunk_combined_output", f"{CELLTYPE1}_readID_separated_bam.bam"),
+        celltype2_separated_bam_path = os.path.join(Data_results_path, "batch{i}_results", 
+                        "read_separation_results","chunk_combined_output", f"{CELLTYPE2}_readID_separated_bam.bam")
+    conda:
+        COMMON_VCID_COFIG
+    params:
+        script = os.path.join(algorithem_path, "subworkflow", "read_separation_subworkflow.sh"),
+        #smk_subworkflow = os.path.join(algorithem_path, "subworkflow", "read_separation_sub_pipeline.smk")
+    shell:
+        """
+        tabix -p vcf -f {input.vcf}
+        chmod +x {params.script}
+        {params.script} {input.yaml}
+        """
+        #snakemake --snakefile {params.smk_subworkflow} --config config_file={input.yaml} 
+
+
+
+all_CCID_inputs = [
+    expand("{results_path}/batch{batch_num}_results/read_separation_results/chunk_combined_output/all_out_read.txt", 
+                           batch_num=range(1, int(batch_number) + 1),
+                           results_path = Data_results_path),
+    os.path.join(SNP_CALLING_OUTPUT_DIR, "snp_count_frequency_distribution.pdf")
+
+]
+
+    
+rule CCID_all:
+    input:
+        all_CCID_inputs
+        

@@ -1,0 +1,57 @@
+# 1.通用信息 ----------------------------------------------------------- 
+# 注释：此部分内容需要根据实际情况进行修改
+
+project: CCID3.1_dev_testing_0617
+celltype1: Tsc
+celltype2: Nalm6sc
+celltype3: Nalm6-T
+out_dir: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results_CCID3.1
+# 注释：celltype1和celltype2是指实验中细胞的类型，需要与annotation中的Sort_Population列标注保持一致
+# 注释：建议可以把metadata也存放在out_dir，方便后期的分析，但不是必须的
+
+Multi_batches: 1
+# 注释：如果有多个数据集，则需要调整此参数，默认是1，
+# 在多个数据集的情况下，需要在下面的sequence_files、annotation、zUMIs_barcode_list中添加对应的文件，
+
+Differetial_SNPs_from_other_source: /mnt/data/user/zhouhui/Slurm_bash/CCID3.1_dev_testing_0617/50oom_T_cell_dynamics_20kcells_CCID3.processed.vcf.gz
+#Differetial_SNPs_from_other_source: 
+BAM_file_from_other_source: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_results_extracted_bam/Nalm6sc_Mk4LAq.bam
+# 注释：默认为空，即直接从RNA中进行SNP calling，若有其他来源的SNP数据，则可以跳过原始的SNP calling步骤
+
+# 2) Annotation ------------------------------------
+# 注释：Annotation信息储存了barcode list和对应的细胞类型信息（Sort_Population列）
+# 注释：整一个分析文件中有三处地方需要选择barcode list,第一个是zUMIs时(需要提供文件)；第二个是为SNP calling准备single的bam文件时(不需要提供文件);
+# 第三个是做readseparation时，需要指定哪些细胞是希望被read separation的(需要提供文件)
+annotation1: 
+
+# 3) zUMIs_barcode_list ------------------------------------
+# 这个文件在原版的zUMIs yaml file中名为barcodes$barcode_file
+zUMIs_barcode_list1: 
+
+# 4) readseparation_barcode_list ------------------------------------
+# 注释：此处可空置，如果空置则默认所有细胞都需要read separation，则程序会直接引用之前的zUMIs_barcode_list
+readseparation_barcode_list1: 
+
+
+
+#zUMIs_directory: /mnt/data/user/zhouhui/CCID_pipeline3.0/algorithem/zUMIs_tabix-main
+zUMIs_directory: /dev/null
+# 到时候也可以换成dockerhub中的镜像路径
+zUMIs_container: zumis_tabix_main_docker:latest
+
+# 计算配置信息 ----------------------------------------------------------- 
+num_threads: 45
+#mem_limit: 800
+
+# snakemake pipeline 信息 ------------------------------------------------
+pipeline_path: /mnt/data/user/zhouhui/CCID3.1_dev
+
+# 参考基因组信息 ----------------------------------------------------------- 
+# 注释：后期将这些数据打包封装即可
+reference:
+  #STAR_index: /mnt/nvme/home/chris/resources/genomes/Human/STAR7idx_primary_noGTF
+  GTF_file: /mnt/nvme/home/chris/resources/genomes/Human/gencode.v42.primary_assembly.annotation.nochr.rRNA.gtf
+  #additional_STAR_params: '--clip3pAdapterSeq CTGTCTCTTATACACATCT --limitOutSJcollapsed 3000000'
+  #reference_genome: /mnt/data/user/zhouhui/resources/hg38.primary_assembly.fa
+  reference_genome: /dev/null
+  #additional_files:

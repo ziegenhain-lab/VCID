@@ -1,0 +1,47 @@
+------------- 
+
+ Good news! A newer version of zUMIs is available at https://github.com/sdparekh/zUMIs 
+
+-------------
+Using miniconda environment for zUMIs!
+ note: internal executables will be used instead of those specified in the YAML file!
+Using miniconda environment for zUMIs!
+ note: internal executables will be used instead of those specified in the YAML file!
+Traceback (most recent call last):
+  File "/mnt/nvme/home/zhouhui/zUMIs_tabix-main/zUMIs-env/bin/conda-unpack", line 1009, in <module>
+    update_prefix(os.path.join(new_prefix, path), new_prefix,
+  File "/mnt/nvme/home/zhouhui/zUMIs_tabix-main/zUMIs-env/bin/conda-unpack", line 66, in update_prefix
+    with open(path, 'rb+') as fh:
+OSError: [Errno 26] Text file busy: '/mnt/nvme/home/zhouhui/zUMIs_tabix-main/zUMIs-env/bin/sed'
+
+
+ You provided these parameters:
+ YAML file:	/mnt/data/user/zhouhui/CCID_pipeline2.0/config/batch2_config.yaml
+ zUMIs directory:		/mnt/nvme/home/zhouhui/zUMIs_tabix-main
+ STAR executable		STAR
+ samtools executable		samtools
+ pigz executable		pigz
+ Rscript executable		Rscript
+ RAM limit:   100
+ zUMIs version 2.9.7 
+
+
+tor 10 apr 2025 13:53:38 CEST
+
+
+ You provided these parameters:
+ YAML file:	/mnt/data/user/zhouhui/CCID_pipeline2.0/config/batch1_config.yaml
+ zUMIs directory:		/mnt/nvme/home/zhouhui/zUMIs_tabix-main
+ STAR executable		STAR
+ samtools executable		samtools
+ pigz executable		pigz
+ Rscript executable		Rscript
+ RAM limit:   100
+ zUMIs version 2.9.7 
+
+
+tor 10 apr 2025 13:53:38 CEST
+WARNING: The STAR version used for mapping is 2.7.3a and the STAR index was created using the version 2.7.1a. This may lead to an error while mapping. If you encounter any errors at the mapping stage, please make sure to create the STAR index using STAR 2.7.3a.
+Filtering...
+WARNING: The STAR version used for mapping is 2.7.3a and the STAR index was created using the version 2.7.1a. This may lead to an error while mapping. If you encounter any errors at the mapping stage, please make sure to create the STAR index using STAR 2.7.3a.
+Filtering...
