@@ -27,7 +27,7 @@ BAM_file_from_other_source = config['BAM_file_from_other_source']
 
 Configfile_folder = os.path.join(Program_folder, "config")
 Conda_env_path = os.path.join(Program_folder, "conda_config")
-COMMON_VCID_COFIG = os.path.join(Conda_env_path, "VCID_environment.yaml")
+COMMON_VCID_CONFIG = os.path.join(Conda_env_path, "VCID_environment.yaml")
 algorithem_path = os.path.join(Program_folder, "algorithem", "snakemake_pipeline")
 
 # 2. Output files  ----------------------------------------------
@@ -59,7 +59,7 @@ rule split_yaml_batches:
     output:
         os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
         script=os.path.join(algorithem_path, "basic", "split_yaml_batches.R"),
         output_dir=SUB_CONFIG_FILES
@@ -111,7 +111,7 @@ rule bam_combining_and_splitting_sub_pipeline:
         split_bam_celltype2 = os.path.join(Data_results_path, "batch{i}_results", 
                                 "split_bam_output", f"{CELLTYPE2}_subset.bam")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
         script = os.path.join(algorithem_path, "subworkflow", "read_mapping_and_bam_sorting.sh"),
         #smk_subworkflow = os.path.join(algorithem_path, "subworkflow", "read_mapping_and_bam_sorting.smk")
@@ -149,7 +149,7 @@ rule celltype_specific_bam_combining:
         celltype1_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE1}_all_batches.bam"),
         celltype2_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE2}_all_batches.bam")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
         celltype1_bams_str=lambda wildcards, input: " ".join(input.celltype1_bams),
         celltype2_bams_str=lambda wildcards, input: " ".join(input.celltype2_bams)
@@ -168,7 +168,7 @@ rule SNP_calling_step1_bamaddrg:
     output:
         bamaddrg_bam = os.path.join(Data_results_path, "combined_bam", "bamaddrg_output.bam")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
         celltype1 = CELLTYPE1,
         celltype2 = CELLTYPE2
@@ -191,13 +191,14 @@ rule SNP_calling_step2_freebayes:
         vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.vcf"),
         tmp_region = os.path.join(SNP_CALLING_OUTPUT_DIR, "tmpregions")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
-        generate_regions_script = os.path.join(algorithem_path, "SNP_calling", "fasta_generate_regions.py")
+        generate_regions_script = os.path.join(algorithem_path, "SNP_calling", "fasta_generate_regions.py"),
+        NUM_THREADS = config["num_threads"]
     shell:
         """
         {params.generate_regions_script} {input.genome_index} 100000 > {output.tmp_region} 
-        freebayes-parallel {output.tmp_region} 40 \
+        freebayes-parallel {output.tmp_region} {params.NUM_THREADS} \
             --min-mapping-quality 10 --min-base-quality 20 --min-alternate-count 5 -f {input.genome} \
             {input.bamaddrg_bam} > {output.vcf}
         """
@@ -212,7 +213,7 @@ rule vcf_processing:
        vcf_0_1 = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}._snponly_0_1.vcf.gz"),
        processed_vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.processed.vcf.gz")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     shell:
         """
         bcftools view {input.vcf} -Oz -o {output.vcf_gz}
@@ -236,7 +237,7 @@ rule SNP_distribution_per_gene:
         snp_counts_per_gene = os.path.join(SNP_CALLING_OUTPUT_DIR, "snp_counts_per_gene.csv"),
         counts_distribution_plot = os.path.join(SNP_CALLING_OUTPUT_DIR, "snp_count_frequency_distribution.pdf")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     shell:
         """
         Rscript {params.script} --vcf {input.vcf} --gtf {input.gtf} \
@@ -263,7 +264,7 @@ rule read_separation_sub_pipeline:
         celltype2_separated_bam_path = os.path.join(Data_results_path, "batch{i}_results", 
                         "read_separation_results","chunk_combined_output", f"{CELLTYPE2}_readID_separated_bam.bam")
     conda:
-        COMMON_VCID_COFIG
+        COMMON_VCID_CONFIG
     params:
         script = os.path.join(algorithem_path, "subworkflow", "read_separation_subworkflow.sh"),
         #smk_subworkflow = os.path.join(algorithem_path, "subworkflow", "read_separation_sub_pipeline.smk")

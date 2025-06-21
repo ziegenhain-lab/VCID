@@ -1,10 +1,71 @@
   # VCID4.0
+
 **V**ariant-based **C**ell-cell **I**nteraction **D**econvoluting(VCID)
 
-This pipeline is called CCID, which stands for cell cell interaction decomposition. It is a pipeline for analyzing cell-cell interactions. The main purpose of this pipeline is to analyze cell-cell interactions by analyzing single-cell transcriptome data.
+## Abstract
+
+This pipeline is called VCID, which stands for cell cell interaction decomposition. It is a pipeline for analyzing cell-cell interactions. The main purpose of this pipeline is to analyze cell-cell interactions by analyzing single-cell transcriptome data.
 In order to see the flowchart, it is recommended to use Mermaid Editor in Vscode
 
 Note: This pipeline is still under development 2025.6.21
 
 
+
+## Usage Instructions for the VCID Pipeline
+
+### 1.Prerequisites
+
+Before using this pipeline, please ensure the following:
+
+- Conda is installed on your system.
+
+- The zUMIs software package is available (it will be invoked automatically if needed).
+
+### 2.Overview of Pipeline Function
+
+This pipeline is designed to deconvolute the transcriptome of doublets composed of two cells from distinct genetic backgrounds, based on SNP differences, and reconstruct the transcriptomes of individual cells.
+
+**Use Cases**
+The pipeline can be applied in several different input scenarios:
+
+- Only RNA-seq FASTQ files are provided:
+  - The pipeline will run zUMIs to generate BAM files.
+  - SNP calling will be performed on the BAM files to produce VCF files.
+  - Read separation will be performed based on the generated VCF.
+
+- RNA-seq FASTQ files + a provided VCF file:
+  - The pipeline will run zUMIs to generate BAM files.
+  - Read separation will be performed using the provided VCF.
+- BAM file + a provided VCF file:
+  - The pipeline will skip zUMIs and SNP calling steps.
+  - It will directly perform read separation using the provided files.
+
+### 3.Workflow
+
+#### 1) Edit the configuration file
+
+Update config/sum_config.yaml with paths and parameters specific to your data.
+
+#### 2) Create and activate a conda environment with Snakemake
+
+```
+conda create -n VCID_snakemake -c conda-forge -c bioconda snakemake
+conda activate VCID_snakemake
+```
+
+#### 3) Run the pipeline within the VCID_snakemake environment
+
+- All non-zUMIs rules are configured to use conda.
+
+- Snakemake will automatically resolve and build the required environments.
+
+#### 4) Navigate to the pipeline directory and run Snakemake
+
+```
+cd VCID4.0/algorithem/snakemake_pipeline
+snakemake CCID_all --use-conda --cores 20 --jobs 1
+```
+
+⚠️ Note: Please set --jobs to 1. Running multiple zUMIs jobs in parallel may lead to conflicts.
+⚠️ Note: Do not set the number of cores higher than the num_threads specified in the YAML file.
 
