@@ -96,10 +96,6 @@ chmod +x $READ_SEPARATION_COMBINING_SCRIPT
 bash $SPLIT_CHUNK_AND_READ_SEPARATION_SCRIPT $RUN_BAM_FILE $VCF_FILE $SPLIT_CHUNK_OUTPUT $READ_SEPARATION_RSCRIPT
 bash $READ_SEPARATION_COMBINING_SCRIPT $CONFIG_FILE $CHUNK_COMBINED_OUTPUT $SPLIT_CHUNK_OUTPUT $MAKE_COUNT_TABLE_SCRIPT
 
-#DOUBLETS_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/DoubletsSeparation_SNPbased_v0.6.0_separation.R"
-#Rscript $DOUBLETS_SCRIPT --yaml $CONFIG_FILE --vcf $VCF_FILE --bam $BAM_FILE \
-#    -c $CELLBCs_FOR_READSEPARATION -f "read_separation_results" -a $ANNOTATION 
-
 # 2. 执行 Doublet Separation Plotting 脚本
 echo "Running Doublet Separation Plotting..."
 echo "Maybe someday I will modify this script to use the new version of plotting script.... Please waite for the update"
