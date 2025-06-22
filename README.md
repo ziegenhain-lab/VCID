@@ -4,8 +4,8 @@
 
 ## Abstract
 
-This pipeline is called VCID, which stands for cell cell interaction decomposition. It is a pipeline for analyzing cell-cell interactions. The main purpose of this pipeline is to analyze cell-cell interactions by analyzing single-cell transcriptome data.
-In order to see the flowchart, it is recommended to use Mermaid Editor in Vscode
+This pipeline is called VCID, which stands for cell cell interaction deconvoluting. It is a pipeline for analyzing cell-cell interactions with single-cell transcriptome data.
+For downstream analysis code, please refer to: https://github.com/ziegenhain-lab/T-cell-dynamics-analysis
 
 Note: This pipeline is still under development 2025.6.21
 
@@ -33,9 +33,14 @@ The pipeline can be applied in several different input scenarios:
   - SNP calling will be performed on the BAM files to produce VCF files.
   - Read separation will be performed based on the generated VCF.
 
+- Only BAM files are provided[Under Development...]:
+  - The pipeline will skip zUMIs.
+  - It will directly perform SNP calling and read separation using the provided BAM files.
+
 - RNA-seq FASTQ files + a provided VCF file:
   - The pipeline will run zUMIs to generate BAM files.
   - Read separation will be performed using the provided VCF.
+
 - BAM file + a provided VCF file:
   - The pipeline will skip zUMIs and SNP calling steps.
   - It will directly perform read separation using the provided files.
