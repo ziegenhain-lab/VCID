@@ -69,3 +69,24 @@ snakemake CCID_all --use-conda --cores 20 --jobs 1
 ⚠️ Note: Please set --jobs to 1. Running multiple zUMIs jobs in parallel may lead to conflicts.
 ⚠️ Note: Do not set the number of cores higher than the num_threads specified in the YAML file.
 
+***
+
+### 4.Code and Test Data Used During Development
+This repository contains scripts to generate test datasets during the development and testing.
+
+#### 1) FASTQ Downsampling Using BBTools
+Downsampled FASTQ files are stored in: `/mnt/data/user/zhouhui/downsampled_fastq`
+
+These files were generated using the BBTools suite.
+The corresponding script can be found at: `algorithem/other/bbtools_fastq_downsampling.sh`
+
+These downsampled FASTQ files can be used for full-pipeline testing, including zUMIs-based workflows.
+
+#### 2) Extracted BAM for Direct Testing
+Extracted BAM files for controlled testing are located at: 
+`/mnt/data/user/zhouhui/T_cell_dynamics_20kcells_results_extracted_bam`
+
+These files were generated using:
+`algorithem/other/extract_random_bam_by_condition_for_testing.sh`
+
+These BAM files are specifically prepared for testing read separation pipelines that rely on external BAM and VCF files.

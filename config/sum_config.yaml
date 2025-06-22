@@ -1,4 +1,4 @@
-# 本程序依赖于两个不同的conda环境，其一是zUMIs以外的所有程序，其二是zUMIs（目前后者正在测试中，前者正在开发中...）
+# 本程序依赖于两个docker镜像，其一是zUMIs以外的所有程序，其二是zUMIs（目前后者正在测试中，前者正在开发中...）
 #     因此yaml文件也分为两个part，其中第一个part是必填的信息；而第二个part只有在使用zUMIs时才需要填写。
 
 # 注释：本pipeline可以在多种情况下使用
@@ -17,8 +17,8 @@ celltype3: Nalm6-T
 
 # 2) 程序地址 ------------------------------------
 # zUMIs_directory是为调用本地的打包好的zUMIs准备的；zUMIs_container是为更进一步封装的docker容器准备的
-pipeline_path: /mnt/data/user/zhouhui/CCID3.1_dev
-zUMIs_directory: /mnt/data/user/zhouhui/CCID_pipeline3.0/algorithem/zUMIs_tabix-main
+pipeline_path: /mnt/data/user/zhouhui/VCID4.0-n.n_pipeline_folder/VCID4.0
+zUMIs_directory: /mnt/data/user/zhouhui/CCID1.0-3.1_pipeline_folder/CCID_pipeline3.0/algorithem/zUMIs_tabix-main
 zUMIs_container: zumis_tabix_main_docker:latest
 
 # 3) 数据地址 ------------------------------------
@@ -92,7 +92,7 @@ sequence_files2:
       - BC(101-120)
 
 # 2) zUMIs运行参数 ------------------------------------
-mem_limit: 70
+mem_limit: 80
 
 # 在常规情况下，No need to modify parameters after this line
 # 3) zUMIs基础参数 ------------------------------------
