@@ -71,7 +71,7 @@ cd VCID4.0/algorithem/snakemake_pipeline
 snakemake CCID_all --use-conda --cores 20 --jobs 1
 ```
 
-⚠️ Note: Please set --jobs to 1. Running multiple zUMIs jobs in parallel may lead to conflicts.
+⚠️ Note: Please set --jobs to 1. Running multiple zUMIs jobs in parallel may lead to conflicts.   
 ⚠️ Note: Do not set the number of cores higher than the num_threads specified in the YAML file.
 
 ***
