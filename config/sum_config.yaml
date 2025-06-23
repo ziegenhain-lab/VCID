@@ -24,8 +24,8 @@ zUMIs_directory: /mnt/nvme/home/zhouhui/zUMIs_tabix-main
 # a.核心数据 ------------
 # 注释：Differetial_SNPs_from_other_source默认为空，即直接从RNA中进行SNP calling，若有其他来源的SNP数据，则可以跳过原始的SNP calling步骤
 # 注释：BAM_file_from_other_source默认为空，即基于fastq运行zUMIs，若有其他来源的bam数据，则可以跳过zUMIs步骤
-#Differetial_SNPs_from_other_source: /mnt/data/user/zhouhui/Slurm_bash/CCID3.1_dev_testing_0617/50oom_T_cell_dynamics_20kcells_CCID3.processed.vcf.gz
-Differetial_SNPs_from_other_source: 
+Differetial_SNPs_from_other_source: /mnt/data/user/zhouhui/Slurm_bash/CCID3.1_dev_testing_0617/50oom_T_cell_dynamics_20kcells_CCID3.processed.vcf.gz
+#Differetial_SNPs_from_other_source: 
 BAM_file_from_other_source: 
 #BAM_file_from_other_source: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_results_extracted_bam/Nalm6-T_et4R0J.bam
 out_dir: /mnt/data/user/zhouhui/T_cell_dynamics_20kcells_test_data_results_CCID3.1_nodocker
@@ -57,7 +57,7 @@ reference:
 # 4) 运行参数 ------------------------------------
 # 注释：如果有多个数据集，则需要调整Multi_batches参数，默认是1
 # 在多个数据集的情况下，需要在下面的sequence_files、annotation、zUMIs_barcode_list中添加对应的文件
-Multi_batches: 1
+Multi_batches: 2
 num_threads: 10
 
 

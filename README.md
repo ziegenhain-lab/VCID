@@ -33,10 +33,6 @@ The pipeline can be applied in several different input scenarios:
   - SNP calling will be performed on the BAM files to produce VCF files.
   - Read separation will be performed based on the generated VCF.
 
-- Only BAM files are provided[Under Development...]:
-  - The pipeline will skip zUMIs.
-  - It will directly perform SNP calling and read separation using the provided BAM files.
-
 - RNA-seq FASTQ files + a provided VCF file:
   - The pipeline will run zUMIs to generate BAM files.
   - Read separation will be performed using the provided VCF.
