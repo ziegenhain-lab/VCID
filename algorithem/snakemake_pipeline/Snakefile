@@ -102,8 +102,8 @@ rule run_zUMIs:
 # 注释：子工作流，对不同batch的数据进行read mapping 和 single cell bam文件的提取
 rule bam_combining_and_splitting_sub_pipeline:
     input:
-        zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", 
-                                f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"),
+        zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"
+                            if not BAM_file_from_other_source else BAM_file_from_other_source),
         config_file = os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml")
     output:
         split_bam_celltype1 = os.path.join(Data_results_path, "batch{i}_results", 
@@ -185,8 +185,7 @@ rule SNP_calling_step1_bamaddrg:
 rule SNP_calling_step2_freebayes:
     input:
         bamaddrg_bam = os.path.join(Data_results_path, "combined_bam", "bamaddrg_output.bam"),
-        genome = config['reference']['reference_genome'],
-        genome_index = config['reference']['reference_genome'] + ".bai"
+        genome = config['reference']['reference_genome']
     output:
         vcf = os.path.join(SNP_CALLING_OUTPUT_DIR, f"{PROJECT_NAME}.vcf"),
         tmp_region = os.path.join(SNP_CALLING_OUTPUT_DIR, "tmpregions")
@@ -197,11 +196,25 @@ rule SNP_calling_step2_freebayes:
         NUM_THREADS = config["num_threads"]
     shell:
         """
-        {params.generate_regions_script} {input.genome_index} 100000 > {output.tmp_region} 
+        # 定义索引文件路径
+        GENOME_INDEX={input.genome}.bai
+
+        # 如果 .bai 不存在，则用 samtools 生成
+        if [ ! -f "$GENOME_INDEX" ]; then
+            echo "Index $GENOME_INDEX not found, generating with samtools faidx..."
+            samtools faidx {input.genome}
+        fi
+
+        # 生成分区文件
+        {params.generate_regions_script} $GENOME_INDEX 100000 > {output.tmp_region}
+
+        # 用 freebayes 并行调用变异
         freebayes-parallel {output.tmp_region} {params.NUM_THREADS} \
-            --min-mapping-quality 10 --min-base-quality 20 --min-alternate-count 5 -f {input.genome} \
-            {input.bamaddrg_bam} > {output.vcf}
+            --min-mapping-quality 10 --min-base-quality 20 --min-alternate-count 5 \
+            -f {input.genome} {input.bamaddrg_bam} > {output.vcf}
         """
+
+
 
 rule vcf_processing:
     input:
