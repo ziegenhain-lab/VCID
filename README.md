@@ -91,3 +91,6 @@ These files were generated using:
 `algorithem/other/extract_random_bam_by_condition_for_testing.sh`
 
 These BAM files are specifically prepared for testing read separation pipelines that rely on external BAM and VCF files.
+
+## Flow chart of VCID
+![alt text](algorithem/workflow_demo/mermaid-diagram-2025-06-18-130830.png)
