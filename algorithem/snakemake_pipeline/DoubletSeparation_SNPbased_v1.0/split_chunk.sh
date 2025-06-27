@@ -50,8 +50,17 @@ start_time=$(date +%s)
 samtools idxstats "$BAM_FILE" | awk '$1!="*" {print $1"\t"$2}' > "${OUTPUT_DIR}/chrom_lengths.txt"
 
 # 临时命令文件，用来存放所有子任务的命令
-CMD_FILE="${OUTPUT_DIR}/chunk_commands.sh"
-> "$CMD_FILE"
+CMD_FILE_MKDIR="${OUTPUT_DIR}/chunk_commands_mkdir.sh"
+> "$CMD_FILE_MKDIR"
+
+CMD_FILE_SAM="${OUTPUT_DIR}/chunk_commands_samtools.sh"
+> "$CMD_FILE_SAM"
+
+CMD_FILE_VCF="${OUTPUT_DIR}/chunk_commands_bcftools.sh"
+> "$CMD_FILE_VCF"
+
+CMD_FILE_READSEPARATION="${OUTPUT_DIR}/chunk_commands_readseparation.sh"
+> "$CMD_FILE_READSEPARATION"
 
 # 定义一个函数判断染色体是否合法（符合 1-23, X, Y，不管是否带 chr 前缀）
 is_valid_chrom() {
@@ -111,14 +120,14 @@ while read -r CHROM LENGTH; do
         CHUNK_VCF="${CHROM}_${START}-${END}.vcf"
 
         # 将本次任务的命令写入命令文件
-        echo "mkdir -p ${CHUNK_DIR}" >> "$CMD_FILE"
-        echo "samtools view -b ${BAM_FILE} ${CHROM}:${START}-${END} > ${CHUNK_DIR}/${CHUNK_BAM}" >> "$CMD_FILE"
-        echo "bcftools view -Ov -r ${CHROM}:${VCF_START}-${VCF_END} ${VCF_FILE} > ${CHUNK_DIR}/${CHUNK_VCF}" >> "$CMD_FILE"
+        echo "mkdir -p ${CHUNK_DIR}" >> "$CMD_FILE_MKDIR"
+        echo "samtools view -b ${BAM_FILE} ${CHROM}:${START}-${END} > ${CHUNK_DIR}/${CHUNK_BAM}" >> "$CMD_FILE_SAM"
+        echo "bcftools view -Ov -r ${CHROM}:${VCF_START}-${VCF_END} ${VCF_FILE} > ${CHUNK_DIR}/${CHUNK_VCF}" >> "$CMD_FILE_VCF"
         echo "if [ -f "${CHUNK_DIR}/${CHUNK_BAM}" ] && [ -f "${CHUNK_DIR}/${CHUNK_VCF}" ]; then \
             Rscript ${READ_SEPARATION_SCRIPT} \
                 -b ${CHUNK_DIR}/${CHUNK_BAM} \
                 -s ${CHUNK_DIR}/${CHUNK_VCF}; \
-            fi" >> "$CMD_FILE"
+            fi" >> "$CMD_FILE_READSEPARATION"
 
         # 更新下一区间的起始位置
         START=$((END + 1))
@@ -126,8 +135,11 @@ while read -r CHROM LENGTH; do
 done < "${OUTPUT_DIR}/chrom_lengths.txt"
 
 # 利用 GNU parallel 并行执行所有任务
-# 增加halt用于杀死所有子进程，当存在子进程错误的时候
-parallel --jobs ${NPROC} < "$CMD_FILE"
+# 增加halt用于杀死所有子进程————当存在10子进程错误的时候,立即停止所有子进程
+parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_MKDIR"
+parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_SAM"
+parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_VCF"
+parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_READSEPARATION"
 
 # 并行任务执行完毕后记录结束时间
 end_time=$(date +%s)
