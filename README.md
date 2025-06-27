@@ -92,5 +92,13 @@ These files were generated using:
 
 These BAM files are specifically prepared for testing read separation pipelines that rely on external BAM and VCF files.
 
+### Tips and tricks in use
+
+When you modify the YAML file or some piece of code but believe that the change does not affect previous results — and you want to prevent Snakemake from automatically rerunning all previously executed rules — you can use the following command to "fake" the output file of a specific rule as up-to-date, thereby avoiding the issue:
+
+```
+snakemake -R your_rule_name --touch
+```
+
 ## Flow chart of VCID
 ![alt text](algorithem/workflow_demo/mermaid-diagram-2025-06-18-130830.png)
