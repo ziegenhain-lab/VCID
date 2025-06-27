@@ -16,6 +16,11 @@
 #
 # 如果暂时不需要调用 Rscript，可将 Rscript 命令行前加上注释（已示例）。
 
+
+# -m 表示 monitor，开启作业监控模式，也就是 Bash 的作业控制机制。
+# 开启后，Bash 能够更好地管理后台任务和进程组。
+set -m
+
 # 输入参数
 BAM_FILE="$1"
 VCF_FILE="$2"
@@ -58,6 +63,14 @@ is_valid_chrom() {
         return 1
     fi
 }
+
+cleanup() {
+    echo "捕获到终止信号，正在杀掉所有子进程..."
+    kill 0
+    exit 1
+}
+
+trap cleanup SIGTERM SIGINT
 
 
 # 针对每条染色体进行区域切分，生成对应的命令（只处理合法的染色体，输出的目录也在指定输出路径下）
@@ -113,6 +126,7 @@ while read -r CHROM LENGTH; do
 done < "${OUTPUT_DIR}/chrom_lengths.txt"
 
 # 利用 GNU parallel 并行执行所有任务
+# 增加halt用于杀死所有子进程，当存在子进程错误的时候
 parallel --jobs ${NPROC} < "$CMD_FILE"
 
 # 并行任务执行完毕后记录结束时间
