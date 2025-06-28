@@ -136,10 +136,10 @@ done < "${OUTPUT_DIR}/chrom_lengths.txt"
 
 # 利用 GNU parallel 并行执行所有任务
 # 增加halt用于杀死所有子进程————当存在10子进程错误的时候,立即停止所有子进程
-parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_MKDIR"
-parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_SAM"
-parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_VCF"
-parallel --halt now,fail=10 --jobs ${NPROC} < "$CMD_FILE_READSEPARATION"
+parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_MKDIR"
+parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_SAM"
+parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_VCF"
+parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_READSEPARATION"
 
 # 并行任务执行完毕后记录结束时间
 end_time=$(date +%s)
