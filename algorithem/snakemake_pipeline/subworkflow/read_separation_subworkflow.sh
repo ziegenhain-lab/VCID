@@ -105,11 +105,19 @@ echo "Maybe someday I will modify this script to use the new version of plotting
 
 # 3. 执行 BAM 文件分离操作
 echo "Splitting BAM files for cell types..."
-SEPARATE_BAM_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/parallel_extract_bam.sh"
-chmod +x $SEPARATE_BAM_SCRIPT
 
+# 目前取消这些parallel extraction，因为split和parallel并不能提升效率，限速步骤在解压缩bam
+#SEPARATE_BAM_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/parallel_extract_bam.sh"
+#chmod +x $SEPARATE_BAM_SCRIPT
 # 分离 CellType1 和 CellType2 的 BAM 文件
-$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
-$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
+#$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
+#$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
+samtools view -@ 30 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_separated_bam.txt"
+samtools view -@ 30 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_separated_bam.txt"
+
+echo "Counting reads number for each cell before read separation..."
+READCOUNT_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/read_per_cell_from_bam.sh"
+READCOUNT_CSV="$CHUNK_COMBINED_OUTPUT/read_count_per_cell_basedon_bam.csv"
+bash $READCOUNT_SCRIPT $RUN_BAM_FILE $READCOUNT_CSV 30
 
 echo "Pipeline completed successfully."

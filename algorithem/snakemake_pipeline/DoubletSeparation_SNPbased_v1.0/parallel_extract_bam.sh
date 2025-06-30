@@ -1,5 +1,7 @@
 #!/bin/bash
-
+# 目前这个bash脚本废弃不用了...
+#! 经调查发现实际上并不需要将queryID文件切分成多个小文件, 因为内存足够大；并且该环节的限速步骤是解压bam文件
+#! 而非使用O(1)的哈希表进行查询，所以直接使用单个queryID文件即可；并且可以把多线程用于解压缩
 # Parameter checking
 if [ "$#" -ne 4 ]; then
     echo "Usage: $0 <readID_file> <input_bam> <output_dir> <threads>"
