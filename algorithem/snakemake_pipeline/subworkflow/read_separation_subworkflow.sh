@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# 检查是否传入了配置文件路径
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <config_file>"
     exit 1
 fi
 
-# 从命令行参数中获取配置文件路径
 CONFIG_FILE="$1"
 
-# 读取配置文件中的变量
+# Read variables from the configuration file
 PROJECT_NAME=$(grep '^project:' $CONFIG_FILE | cut -d ':' -f 2 | xargs)
 Program_folder=$(grep '^pipeline_path:' $CONFIG_FILE | cut -d ':' -f 2 | xargs)
 algorithem_path="$Program_folder/algorithem/snakemake_pipeline"
@@ -24,7 +22,7 @@ BAM_file_from_other_source=$(grep '^BAM_file_from_other_source:' $CONFIG_FILE | 
 DATA_RESULTS_PATH=$(grep '^out_dir:' $CONFIG_FILE | cut -d ':' -f 2 | xargs)
 THREADS=$(grep '^num_threads:' $CONFIG_FILE | cut -d ':' -f 2 | xargs)
 
-# 创建输出目录
+# Output directories
 READ_SEPARATION_RESULTS_DIR="$DATA_RESULTS_PATH/read_separation_results"
 SPLIT_CHUNK_OUTPUT="$DATA_RESULTS_PATH/read_separation_results/split_chunk_output"
 CHUNK_COMBINED_OUTPUT="$DATA_RESULTS_PATH/read_separation_results/chunk_combined_output"
@@ -34,14 +32,14 @@ mkdir -p $CHUNK_COMBINED_OUTPUT
 
 echo "$DATA_RESULTS_PATH"
 
-# 2. 根据是否提供了外部 SNP 文件路径来选择 VCF 文件路径
+# 2.Choose the VCF file path based on whether an external SNP file path is provided.
 if [ -z "$Differetial_SNPs_from_other_source" ] || [ "$Differetial_SNPs_from_other_source" = "~" ]; then
-    # 如果没有提供外部 SNP 文件路径，使用默认路径
+    # If no external SNP file path is provided, the default path will be used.
     PARENT_DIR=$(dirname "$DATA_RESULTS_PATH")
     VCF_FILE="$PARENT_DIR/SNP_calling_output/${PROJECT_NAME}.processed.vcf.gz"
     echo "Default VCF file detected: $VCF_FILE"
 else
-    # 否则，使用提供的外部 SNP 文件路径
+    # Otherwise, use the provided external SNP file path.
     VCF_FILE="$Differetial_SNPs_from_other_source"
     VCF_FILE_INDEX="${Differetial_SNPs_from_other_source}.tbi"
     echo "External SNP file detected: $Differetial_SNPs_from_other_source"
@@ -51,25 +49,25 @@ else
 
 fi
 
-# 3. 根据是否提供了外部 BAM 文件路径来选择 BAM 文件路径
+# 3.Choose the BAM file path based on whether an external BAM file path is provided.
 if [ -z "$BAM_file_from_other_source" ] || [ "$BAM_file_from_other_source" = "~" ]; then
-    # 如果没有提供外部 BAM 文件路径，使用默认路径
+    # If no external BAM file path is provided, the default path will be used.
     BAM_FILE="$DATA_RESULTS_PATH/${PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"
     echo "Default BAM file detected: $BAM_FILE"
 else
-    # 否则，使用提供的外部 BAM 文件路径
+    # Otherwise, use the provided external BAM file path.
     echo "External BAM file detected"
     BAM_FILE="$BAM_file_from_other_source"
     echo "External BAM file locates in: $BAM_file_from_other_source"
 fi
 
 
-# 1. 执行 Doublet Separation 脚本
+# 1. Execute the Doublet Separation script
 echo "Running Doublet Separation..."
 RUN_BAM_FILE=""
 Test_BAM_FILE="$DATA_RESULTS_PATH/${PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.test.bam"
 
-# 如果 readseparation list 和 zUMIs list 不同，则进行 BAM 文件筛选，筛选出我们想要的数据进行小批量的测试
+# If the readseparation list and zUMIs list are different, then perform BAM file filtering to select the data we want for small-batch testing.
 if [ "$CELLBCs_FOR_READSEPARATION" != "$CELLBCs_FOR_zUMIs" ]; then
     echo "The test list has been detected and will be used to filter the BAM file for read separation."
     samtools view -D BC:$CELLBCs_FOR_READSEPARATION -@ $THREADS -o $Test_BAM_FILE $BAM_FILE
@@ -79,7 +77,7 @@ else
     RUN_BAM_FILE=$BAM_FILE
 fi
 
-# 检查RUN_BAM_FILE的bai索引文件是否存在
+# Check if the index file for RUN_BAM_FILE exists.
 if [ ! -f "${RUN_BAM_FILE}.bai" ]; then
     echo "Index file for BAM file not found. Creating index..."
     samtools index $RUN_BAM_FILE
@@ -96,26 +94,26 @@ chmod +x $READ_SEPARATION_COMBINING_SCRIPT
 bash $SPLIT_CHUNK_AND_READ_SEPARATION_SCRIPT $RUN_BAM_FILE $VCF_FILE $SPLIT_CHUNK_OUTPUT $READ_SEPARATION_RSCRIPT
 bash $READ_SEPARATION_COMBINING_SCRIPT $CONFIG_FILE $CHUNK_COMBINED_OUTPUT $SPLIT_CHUNK_OUTPUT $MAKE_COUNT_TABLE_SCRIPT
 
-# 2. 执行 Doublet Separation Plotting 脚本
+# 2. Execute the Doublet Separation Plotting script
 echo "Running Doublet Separation Plotting..."
 echo "Maybe someday I will modify this script to use the new version of plotting script.... Please waite for the update"
 #PLOTTING_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/DoubletsSeparation_SNPbased_v0.6.0_plotting.R"
 #Rscript $PLOTTING_SCRIPT --input "$CHUNK_COMBINED_OUTPUT/all_out_read.txt" --annotation $ANNOTATION \
 #    --outdir $READ_SEPARATION_RESULTS_DIR --yaml $CONFIG_FILE
 
-# 3. 执行 BAM 文件分离操作
+# 3. Perform BAM file separation operation
 echo "Splitting BAM files for cell types..."
 
-# 目前取消这些parallel extraction，因为split和parallel并不能提升效率，限速步骤在解压缩bam
+# Parallel extraction is currently disabled because splitting and parallelizing do not improve efficiency; the rate-limiting step is performed during BAM decompression.
 #SEPARATE_BAM_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/parallel_extract_bam.sh"
 #chmod +x $SEPARATE_BAM_SCRIPT
-# 分离 CellType1 和 CellType2 的 BAM 文件
+# Separate the BAM files for CellType1 and CellType2.
 #$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
 #$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
 samtools view -@ 25 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_separated_bam.bam"
 samtools view -@ 25 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_separated_bam.bam"
 
-# 这个代码是没问题的，就是太耗时间了，所以这次先把它取消掉算了
+# The code itself is fine, it's just too time-consuming, so let's cancel it for now.
 #echo "Counting reads number for each cell before read separation..."
 #READCOUNT_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/read_per_cell_from_bam.sh"
 #READCOUNT_CSV="$CHUNK_COMBINED_OUTPUT/read_count_per_cell_basedon_bam.csv"
