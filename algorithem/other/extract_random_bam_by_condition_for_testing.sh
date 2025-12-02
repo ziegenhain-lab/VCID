@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 参数检查
+# Parameter check
 if [[ $# -ne 3 ]]; then
   echo "Usage: $0 <metadata.txt> <input.bam> <output_dir>"
   exit 1
@@ -10,7 +10,6 @@ metadata_file="$1"
 input_bam="$2"
 output_dir="$3"
 
-# 检查文件是否存在
 if [[ ! -f "$metadata_file" ]]; then
   echo "Error: Metadata file '$metadata_file' not found."
   exit 1
@@ -23,7 +22,7 @@ fi
 
 mkdir -p "$output_dir"
 
-# 获取 sort_population 和 XC_DNBPE 的列号
+# Get the column numbers of sort_population and XC_DNBPE.
 cond_col=$(head -n1 "$metadata_file" | tr '\t' '\n' | grep -n "^sort_population$" | cut -d: -f1)
 bc_col=$(head -n1 "$metadata_file" | tr '\t' '\n' | grep -n "^XC_DNBPE$" | cut -d: -f1)
 
@@ -32,21 +31,22 @@ if [[ -z "$cond_col" || -z "$bc_col" ]]; then
   exit 1
 fi
 
-# 获取所有唯一的 sort_population
+# Get all unique sort_population
 sort_populations=$(awk -v c="$cond_col" 'BEGIN{FS="\t"} NR>1 {print $c}' "$metadata_file" | sort -u)
 
 for cond in $sort_populations; do
   echo "Processing sort_population: $cond"
 
-  # 先生成随机6位码
+  # Generate a random 6-bit code
   randcode=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 
-  # 生成barcode子集文件名
+  # Generate a subset of barcode filenames
   barcode_file="${output_dir}/${cond}_${randcode}_subset_cellBClist.txt"
-  # 输出bam路径
+  # Generate output BAM filename
   out_bam="${output_dir}/${cond}_${randcode}.bam"
 
-  # 获取该 sort_population 下所有 XC_DNBPE，随机抽10个写入文件
+  # Retrieve all XC_DNBPE values ​​under the given sort_population
+  # and randomly select 10 to write to a file.
   awk -v FS="\t" -v c="$cond_col" -v b="$bc_col" -v val="$cond" 'NR>1 && $c==val {print $b}' "$metadata_file" | sort -u | shuf | head -n 10 > "$barcode_file"
 
   barcode_count=$(wc -l < "$barcode_file")
