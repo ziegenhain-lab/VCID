@@ -1,73 +1,51 @@
 #!/bin/bash
-#! R脚本路径需要指明！
 
-# 接收输入参数
-YAML_FILE=$1             # YAML文件路径
-OUT_DIR=$2               # 输出目录
-CHUNK_OUTPUT_DIR=$3     # 输入目录，里面是各个chunk的输出结果
-MAKE_READ_COUNTS=$4 # 生成计数文件的脚本路径
+# Input parameters
+YAML_FILE=$1             # YAML config file path
+OUT_DIR=$2               # Output directory
+CHUNK_OUTPUT_DIR=$3     # input directory containing chunked output folders
+MAKE_READ_COUNTS=$4 # Script path to generate count file
 
-# 读取YAML文件中的CELLTYPE1和CELLTYPE2（假设你已经有了一个方法来从yaml读取这些信息）
+
 CELLTYPE1=$(grep "^celltype1:" "$YAML_FILE" | cut -d ':' -f2 | xargs)
 CELLTYPE2=$(grep "^celltype2:" "$YAML_FILE" | cut -d ':' -f2 | xargs)
 
-# 创建输出目录
 mkdir -p "$OUT_DIR"
 
-# 合并所有的out_read_readID.txt，并根据CELLTYPE1和CELLTYPE2筛选出对应的readID
-echo "合并 out_read_readID.txt 文件并筛选 readID..."
+# Merge all out_read_readID.txt files and filter out the corresponding readIDs 
+# based on CELLTYPE1 and CELLTYPE2.
+echo "Merge the out_read_readID.txt file and filter by readID..."
 
-# 使用GNU Parallel并行化处理每个子文件夹的out_read_readID.txt
+# Use GNU Parallel to process the out_read_readID.txt file for each subfolder.
 find "$CHUNK_OUTPUT_DIR" -type f -name "*_out_read_readID.txt" | parallel "
   cat {} >> $OUT_DIR/all_out_read_readID.txt
 "
 
-# 根据CELLTYPE1筛选出对应的readID并保存到文本文件
+# Filter out the corresponding readID based on CELLTYPE1 and save it to a text file
 grep -w "$CELLTYPE1" "$OUT_DIR/all_out_read_readID.txt" | cut -f1 > "$OUT_DIR/${CELLTYPE1}_readID.txt"
 grep -w "$CELLTYPE2" "$OUT_DIR/all_out_read_readID.txt" | cut -f1 > "$OUT_DIR/${CELLTYPE2}_readID.txt"
 
-echo "合并并筛选 readID 完成."
+echo "Merging and filtering readIDs complete."
+echo "Merge out_read.txt file..."
 
-# 合并所有的out_read.txt文件
-echo "合并 out_read.txt 文件..."
-
-# 设置最终输出文件路径
 FINAL_OUT="$OUT_DIR/all_out_read.txt"
-# 找到第一个文件，并提取其 header
+# Locate the first file and extract its header.
 FIRST_FILE=$(find "$CHUNK_OUTPUT_DIR" -type f -name "*_out_read.txt" | head -n 1)
-# 写入 header 到最终输出文件
+# Write header to the final output file
 head -n 1 "$FIRST_FILE" > "$FINAL_OUT"
 
-# 并行处理所有文件（去掉 header），并追加到最终输出文件
+# Process all files in parallel (remove headers) and append them to the final output file.
 find "$CHUNK_OUTPUT_DIR" -type f -name "*_out_read.txt" | grep -v "$FIRST_FILE" | \
   parallel "tail -n +2 {}" >> "$FINAL_OUT"
 
 cp "$FINAL_OUT" "$OUT_DIR/all_out_read_backup.txt"
 
+echo "Gene counts were performed on the merged out_read.txt file..."
 
-
-# 找到第一个文件
-#FIRST_FILE=$(find "$CHUNK_OUTPUT_DIR" -type f -name "*_out_read.txt" | head -n 1)
-
-# 1. 把 header（以RG开头的行）提取并写入最终输出文件
-#grep '^RG' "$FIRST_FILE" > "$OUT_DIR/all_out_read.txt"
-
-# 2. 并行处理所有文件（包括第一个），去掉 header，然后追加到输出
-#find "$CHUNK_OUTPUT_DIR" -type f -name "*_out_read.txt" | \
-#  parallel "tail -n +2 {}" >> "$OUT_DIR/all_out_read.txt"
-
-
-
-# 提供基因数量统计
-echo "对合并后的 out_read.txt 进行基因数量统计..."
-
-# 调用 R 脚本处理计数数据
 Rscript $MAKE_READ_COUNTS "$FINAL_OUT" "$OUT_DIR"
 
 
-# 输出基因数量统计结果
-echo "基因数量统计完成，结果保存在 $OUT_DIR/separated_counts.rds"
+echo "Gene counts have been completed, and the results are saved in [location]. $OUT_DIR/separated_counts.rds"
 
-# 统计输出完成
-echo "所有任务完成！"
+echo "All tasks completed.！"
 

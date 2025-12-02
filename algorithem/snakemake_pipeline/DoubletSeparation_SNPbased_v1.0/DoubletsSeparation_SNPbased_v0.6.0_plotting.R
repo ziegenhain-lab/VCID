@@ -43,25 +43,23 @@ logwrite <- function(msg) {
 # 2.Load files ---------------------------------------------------------------------------------------------
 
 ## load file
-# 读取文件的函数，根据文件后缀判断读取方式
+# The function to read files determines the reading method based on the file extension.
 read_file <- function(input_file) {
-  # 获取文件后缀
+  # Get file extension
   file_extension <- tools::file_ext(input_file)
   
-  # 根据文件后缀选择读取方式
+  # Select the reading method based on the file extension.
   if (file_extension == "txt") {
-    # 读取txt文件，使用\t作为分隔符
-    cat("读取文件：", input_file, "\n")
+    # Read the txt file and use \t as the delimiter.
+    cat("Reading file：", input_file, "\n")
     data <- fread(input_file, sep = "\t")
   } else if (file_extension == "rds") {
-    # 读取rds文件
-    cat("读取RDS文件:", input_file, "\n")
+    cat("Reading RDS file:", input_file, "\n")
     data <- readRDS(input_file)
   } else {
-    stop("不支持的文件格式！")
+    stop("Unsupported file format!")
   }
   
-  # 返回读取的数据
   return(data)
 }
 

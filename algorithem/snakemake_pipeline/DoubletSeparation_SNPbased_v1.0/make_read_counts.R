@@ -1,22 +1,17 @@
 #!/usr/bin/env Rscript
 
-# 加载所需的库
 library(data.table)
 library(reshape2)
 
-# 获取命令行参数
 args <- commandArgs(trailingOnly = TRUE)
 
-# 输入参数：输入的all_out_read.txt文件、输出目录
-input_file <- args[1]   # all_out_read.txt 文件路径
-out_dir <- args[2]      # 输出目录
+input_file <- args[1]   # Path to the all_out_read.txt file
+out_dir <- args[2]     
  
-
-# 读取数据
-print(paste("读取文件:", input_file))
+print(paste("Reading file:", input_file))
 allele_dat <- fread(input_file, header = TRUE, sep = "\t")
 
-# 函数
+# Function to create wide format count tables
 makeWide <- function(allele_dat, metric = c("reads","UMIs"), level = c("exon","intron","exonintron")){
   dat <- allele_dat
   if(metric == "UMIs"){
@@ -46,8 +41,8 @@ makeWide <- function(allele_dat, metric = c("reads","UMIs"), level = c("exon","i
   return(out_tabs)
 }
 
-# 计算并存储结果
-print("生成不同的计数表...")
+# Calculate and store the results
+print("Generate different counting tables...")
 final <- list(
   "counts" = list(
     "exon" = test <- makeWide(allele_dat, metric = "reads", level = "exon"),
@@ -62,11 +57,11 @@ final <- list(
   )
 )
 
-print("完成计数表的计算.")
+print("Complete the calculations on the counting table..")
 
-# 输出结果到RDS文件
+# Output
 output_file <- paste0(out_dir, "/separated_counts.rds")
-print(paste("保存输出结果到:", output_file))
+print(paste("Save the output to:", output_file))
 saveRDS(final, file = output_file, compress = FALSE)
 
-print("所有任务完成！")
+print("All tasks completed.！")

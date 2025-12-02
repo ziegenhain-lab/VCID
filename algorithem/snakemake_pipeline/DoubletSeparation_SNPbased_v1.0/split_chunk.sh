@@ -1,55 +1,64 @@
 #!/bin/bash
-# 使用方法:
-#   ./run_chunks.sh input.bam input.vcf /path/to/output_dir
-#
-# 要求:
-#   1. 已安装 samtools、bcftools、GNU parallel 和 tabix（原VCF需建立索引）。
+# Usage:
 
-#
-# 脚本说明：
-#   1. 使用 samtools idxstats 获取所有染色体名称和长度，然后保存到输出路径下的 chrom_lengths.txt；
-#   2. 对每条染色体按每 5,000,000 个碱基切分，若最后一段不足 5,000,000，则取实际长度；
-#   3. 对 VCF 文件提取时，右侧区域扩展 2,000bp，但文件以及文件夹名称仍使用原始区间标识（例如 “1-500000”）；(由于目前这一阶段并不需要考虑read pair，所以2000bp完全足够了)
-#   4. 只处理染色体名称为 1-23、X、Y（可支持“chr1”“chrX”等格式）的记录，其它染色体直接跳过；
-#   5. 每个切分区域会在指定输出路径下创建一个独立的文件夹，并输出 BAM 与 VCF 文件；
-#   6. 使用 GNU parallel 并行执行每个区域对应的任务。
-#
-# 如果暂时不需要调用 Rscript，可将 Rscript 命令行前加上注释（已示例）。
+# ./run_chunks.sh input.bam input.vcf /path/to/output_dir
 
+# # Requirements:
 
-# -m 表示 monitor，开启作业监控模式，也就是 Bash 的作业控制机制。
-# 开启后，Bash 能够更好地管理后台任务和进程组。
+# 1. samtools, bcftools, GNU parallel, and tabix must be installed (original VCF requires indexing).
+
+# Script Description:
+
+# 1. Use `samtools idxstats` to obtain all chromosome names and lengths, then save them to `chrom_lengths.txt` 
+    # in the output path.
+
+# 2. Divide each chromosome into segments of 5,000,000 bases. If the last segment is less than 5,000,000 bases, 
+    # use the actual length.
+
+# 3. When extracting from the VCF file, extend the right-hand region by 2,000 bp, but retain the original range 
+    # identifiers (e.g., "1-500000") for file and folder names. (Since read pairs are not needed at this stage, 
+    # 2,000 bp is sufficient.)
+
+# 4. Only process records with chromosome names of 1-23, X, Y (supporting formats such as "chr1" and "chrX"); 
+    # skip other chromosomes.
+
+# 5. Create a separate folder for each segmented region in the specified output path and output BAM and VCF files.
+
+# 6. Use GNU parallel. Execute tasks corresponding to each region in parallel.
+
+# # If you don't need to call Rscript for the time being, you can add a comment before the Rscript command line 
+    # (example provided).
+
+# -m means monitor, enabling job monitoring mode, which is Bash's job control mechanism.
+
+# When enabled, Bash can better manage background tasks and process groups.
 set -m
 
-# 输入参数
 BAM_FILE="$1"
 VCF_FILE="$2"
 OUTPUT_DIR="$3"
 READ_SEPARATION_SCRIPT="$4"
 
-# 检查输入参数
 if [ -z "$BAM_FILE" ] || [ -z "$VCF_FILE" ] || [ -z "$OUTPUT_DIR" ] || [ -z "$READ_SEPARATION_SCRIPT" ]; then
     echo "Usage: $0 input.bam input.vcf /path/to/output_dir READ_SEPARATION_SCRIPT.R"
     exit 1
 fi
 
-# 创建输出路径（如果不存在）
 mkdir -p "$OUTPUT_DIR"
 
-# 每个 chunk 的长度（单位：bp）
+# Length of each chunk (unit: bp)
 CHUNK_SIZE=15000000
-# VCF 提取区域右侧扩展 bp 数量
+# VCF extract region right-side extension bp quantity
 VCF_EXTEND=2000
-# 并行运行的任务数，请根据实际情况调整
+# Please adjust the number of tasks running in parallel according to the actual situation.
 NPROC=25
 
-# 在脚本开头记录开始时间
 start_time=$(date +%s)
 
-# 利用 samtools idxstats 获取染色体及其长度（过滤掉行首为 '*' 的行）
+# Use samtools idxstats to obtain chromosomes and their lengths (filtering out lines that start with '*').
 samtools idxstats "$BAM_FILE" | awk '$1!="*" {print $1"\t"$2}' > "${OUTPUT_DIR}/chrom_lengths.txt"
 
-# 临时命令文件，用来存放所有子任务的命令
+# A temporary command file is used to store the commands for all subtasks.
 CMD_FILE_MKDIR="${OUTPUT_DIR}/chunk_commands_mkdir.sh"
 > "$CMD_FILE_MKDIR"
 
@@ -62,9 +71,10 @@ CMD_FILE_VCF="${OUTPUT_DIR}/chunk_commands_bcftools.sh"
 CMD_FILE_READSEPARATION="${OUTPUT_DIR}/chunk_commands_readseparation.sh"
 > "$CMD_FILE_READSEPARATION"
 
-# 定义一个函数判断染色体是否合法（符合 1-23, X, Y，不管是否带 chr 前缀）
+# Define a function to determine if a chromosome is valid 
+    # (i.e., it conforms to the range 1-23, X, Y, regardless of whether it has the chr prefix).
 is_valid_chrom() {
-    # 去除可能存在的 "chr" 前缀
+    # Remove any possible "chr" prefixes.
     CHROM_NAME=${1#chr}
     if [[ "$CHROM_NAME" =~ ^(1?[0-9]|2[0-3]|[1-9]|X|Y)$ ]]; then
         return 0
@@ -74,7 +84,7 @@ is_valid_chrom() {
 }
 
 cleanup() {
-    echo "捕获到终止信号，正在杀掉所有子进程..."
+    echo "A termination signal has been detected, and all subprocesses are being killed...."
     kill 0
     exit 1
 }
@@ -82,44 +92,44 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 
-# 针对每条染色体进行区域切分，生成对应的命令（只处理合法的染色体，输出的目录也在指定输出路径下）
+# For each chromosome, perform region segmentation and generate corresponding commands 
+    # (only process valid chromosomes, and the output directory is also under the specified output path).
 while read -r CHROM LENGTH; do
-    # 过滤非指定染色体
     if ! is_valid_chrom "$CHROM"; then
-        echo "跳过非指定染色体：$CHROM" 
+        echo "Skip non-specified chromosomes：$CHROM" 
         continue
     fi
 
     START=1
     while [ "$START" -le "$LENGTH" ]; do
         END=$((START + CHUNK_SIZE - 1))
-        # 如果当前 chunk 超出染色体总长度，则取实际长度
+        # If the current chunk exceeds the total length of the chromosome, then the actual length is used.
         if [ "$END" -gt "$LENGTH" ]; then
             END="$LENGTH"
         fi
 
-        # 计算双向扩展区域
+        # Calculate the bidirectional extended region
         VCF_START=$((START - VCF_EXTEND))
-        # 确保起始位置不小于 1
+        # Ensure the starting position is not less than 1.
         if [ "$VCF_START" -lt 1 ]; then
             VCF_START=1
         fi
 
-        # 针对 VCF 提取区域，右侧扩展 VCF_EXTEND bp
+        # For the VCF extraction region, the right side extends VCF_EXTEND bp.
         VCF_END=$((END + VCF_EXTEND))
 
-        # 确保终止位置不超过染色体总长
+        # Ensure the termination position does not exceed the total length of the chromosome.
         if [ "$VCF_END" -gt "$LENGTH" ]; then
             VCF_END="$LENGTH"
         fi
 
-        # 定义当前 chunk 的目录名称，命名格式为 {染色体}-{起始}-{终止}
+        # Define the directory name of the current chunk, in the format {chromosome}-{start}-{end}.
         CHUNK_DIR="${OUTPUT_DIR}/${CHROM}-${START}-${END}"
-        # 定义提取后的 BAM 与 VCF 文件名
+        # Define the extracted BAM and VCF file names.
         CHUNK_BAM="${CHROM}_${START}-${END}.bam"
         CHUNK_VCF="${CHROM}_${START}-${END}.vcf"
 
-        # 将本次任务的命令写入命令文件
+        # Write the commands for this task into the command file.
         echo "mkdir -p ${CHUNK_DIR}" >> "$CMD_FILE_MKDIR"
         echo "samtools view -b ${BAM_FILE} ${CHROM}:${START}-${END} > ${CHUNK_DIR}/${CHUNK_BAM}" >> "$CMD_FILE_SAM"
         echo "bcftools view -Ov -r ${CHROM}:${VCF_START}-${VCF_END} ${VCF_FILE} > ${CHUNK_DIR}/${CHUNK_VCF}" >> "$CMD_FILE_VCF"
@@ -129,19 +139,18 @@ while read -r CHROM LENGTH; do
                 -s ${CHUNK_DIR}/${CHUNK_VCF}; \
             fi" >> "$CMD_FILE_READSEPARATION"
 
-        # 更新下一区间的起始位置
+        # Update the starting position of the next interval
         START=$((END + 1))
     done
 done < "${OUTPUT_DIR}/chrom_lengths.txt"
 
-# 利用 GNU parallel 并行执行所有任务
-# 增加halt用于杀死所有子进程————当存在10子进程错误的时候,立即停止所有子进程
+# Use GNU parallel to execute all tasks in parallel.
+# Adding `halt` kills all child processes — when 10 child process errors occur, all child processes are immediately stopped.
 parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_MKDIR"
 parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_SAM"
 parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_VCF"
 parallel --halt now,fail=50 --jobs ${NPROC} < "$CMD_FILE_READSEPARATION"
 
-# 并行任务执行完毕后记录结束时间
 end_time=$(date +%s)
 elapsed_seconds=$(( end_time - start_time ))
 elapsed_hours=$(echo "scale=2; $elapsed_seconds/3600" | bc)
