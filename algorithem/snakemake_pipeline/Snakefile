@@ -4,7 +4,7 @@ import os
 import yaml
 
 
-# 注释：使用相对位置传入参数
+# Note: Pass parameters using relative positions.
 #args = sys.argv
 #Configfile_pair = args[args.index("--config") + 1]
 #Configfile = Configfile_pair.split('=')[1]
@@ -42,8 +42,10 @@ SUB_CONFIG_FILES = os.path.join(Data_results_path, "sub_config_files")
 os.makedirs(SUB_CONFIG_FILES, exist_ok=True)
 
 
-# 注释：此rule是为了告诉下面的rule我需要生成sub yaml文件；目的是为了实现并行化【√】
-# 看上去这个rule是多余的，因为下面的rule已经实现了这个功能
+# Note: This rule tells the rule below that I need to generate a sub-yaml file; 
+    # the purpose is to achieve parallelization [√]
+# This rule seems redundant, because the rule below already achieves 
+    # this functionality.
 rule split_yaml_batches_resulting:
     input:
         sub_config_files = expand("{folder}/batch{batch_num}_config.yaml",
@@ -51,8 +53,9 @@ rule split_yaml_batches_resulting:
                             batch_num=range(1, int(batch_number) + 1))      
 
 
-# 3.代码 ----------------------------------------------
-# 注释：此rule的作用是将总yaml文件分拆成多个sub yaml文件，以便每个子工作流使用【√】
+# 3. Code ----------------------------------------------
+# Note: This rule splits the main YAML file into multiple sub-YAML 
+    # files so that each sub-workflow can use it. [√]
 rule split_yaml_batches:
     input:
         config_file=Configfile
@@ -69,8 +72,10 @@ rule split_yaml_batches:
         """
 
 
-# 注释：此rule是为了告诉下面的rule我需要生成哪些文件；目的是为了实现并行化【√】
-# 看上去这个rule是多余的，因为下面的rule CCID_all已经实现了这个功能
+# Note: This rule tells the following rule which files to generate; 
+    # its purpose is to achieve parallelization [√]
+# This rule seems redundant because the following rule 
+    # CCID_all already implements this functionality.
 rule zUMIs_resulting:
     input:
         zUMIs_bam_output = expand("{results_path}/batch{batch_num}_results/{project}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam", 
@@ -99,7 +104,8 @@ rule run_zUMIs:
 
 
 
-# 注释：子工作流，对不同batch的数据进行read mapping 和 single cell bam文件的提取
+# Note: Sub-workflow, performing read mapping and single-cell BAM 
+    # file extraction on data from different batches.
 rule bam_combining_and_splitting_sub_pipeline:
     input:
         zUMIs_bam_output = os.path.join(Data_results_path, "batch{i}_results", f"{PROJECT_NAME}.filtered.Aligned.GeneTagged.UBcorrected.sorted.bam"
@@ -121,8 +127,8 @@ rule bam_combining_and_splitting_sub_pipeline:
         {params.script} {input.config_file} {input.zUMIs_bam_output}
         """
         # snakemake --snakefile {params.smk_subworkflow} --config config_file={input} --cores 40 
-        # 注释：以前的版本使用snakemake，所以出现了并行的时候多个input占用一个snakemake.subworkflow的情况，导致了file lock；
-        # 因此新版的改进直接使用bash作为subworkflow的执行方式，避免了上述的问题
+        # Note: Previous versions used snakemake, which led to situations where multiple inputs occupied a single snakemake.subworkflow during parallel execution, causing file locks.
+        # Therefore, the new version uses bash directly as the execution method for subworkflows, avoiding the aforementioned problem.
 
 rule bam_combining_and_splitting_sub_pipeline_resulting:
     input:
@@ -135,17 +141,17 @@ rule bam_combining_and_splitting_sub_pipeline_resulting:
                             results_path=Data_results_path,
                             celltype=CELLTYPE2)
 
-# 注释：将不同batch的single cell bam文件进行合并
+# Note: Merge single cell bam files from different batches
 rule celltype_specific_bam_combining:
     input:
-        # 对 celltype1 进行 BAM 合并
+        # Perform BAM merging on celltype1
         celltype1_bams = expand(os.path.join(Data_results_path, "batch{batch}_results", "split_bam_output", f"{CELLTYPE1}_subset.bam"),
                                 batch=range(1, int(batch_number) + 1)),
-        # 对 celltype2 进行 BAM 合并
+        # Perform BAM merging on celltype2
         celltype2_bams = expand(os.path.join(Data_results_path, "batch{batch}_results", "split_bam_output", f"{CELLTYPE2}_subset.bam"),
                                 batch=range(1, int(batch_number) + 1))
     output:
-        # 合并后的 BAM 文件（celltype1 和 celltype2 分别有不同的输出文件）
+        # The merged BAM file (celltype1 and celltype2 each have different output files)
         celltype1_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE1}_all_batches.bam"),
         celltype2_bams_merged = os.path.join(Data_results_path, "combined_bam", f"{CELLTYPE2}_all_batches.bam")
     conda:
@@ -154,8 +160,8 @@ rule celltype_specific_bam_combining:
         celltype1_bams_str=lambda wildcards, input: " ".join(input.celltype1_bams),
         celltype2_bams_str=lambda wildcards, input: " ".join(input.celltype2_bams)
     shell:
-        # 注释：这一步将多个batch的bam文件合并，虽然会存在不同batch中的cell barcode重复的情况，
-        # 但是这一步仅仅是为了SNP calling准备数据，而SNP calling只关心细胞类型而不关心barcode
+        # Note: This step merges the BAM files from multiple batches. Although there may be duplicate cell barcodes across different batches,
+        # this step is solely for preparing data for SNP calling, which only considers cell type and not barcode.
         """
         samtools merge -o {output.celltype1_bams_merged} {params.celltype1_bams_str}
         samtools merge -o {output.celltype2_bams_merged} {params.celltype2_bams_str}
@@ -196,19 +202,19 @@ rule SNP_calling_step2_freebayes:
         NUM_THREADS = config["num_threads"]
     shell:
         """
-        # 定义索引文件路径
+        # Define the index file path
         GENOME_INDEX={input.genome}.bai
 
-        # 如果 .bai 不存在，则用 samtools 生成
+        # If .bai does not exist, generate it using samtools.
         if [ ! -f "$GENOME_INDEX" ]; then
             echo "Index $GENOME_INDEX not found, generating with samtools faidx..."
             samtools faidx {input.genome}
         fi
 
-        # 生成分区文件
+        # Generate partition file
         {params.generate_regions_script} $GENOME_INDEX 100000 > {output.tmp_region}
 
-        # 用 freebayes 并行调用变异
+        # Parallel call mutation using Freebayes
         freebayes-parallel {output.tmp_region} {params.NUM_THREADS} \
             --min-mapping-quality 10 --min-base-quality 20 --min-alternate-count 5 \
             -f {input.genome} {input.bamaddrg_bam} > {output.vcf}
@@ -258,8 +264,12 @@ rule SNP_distribution_per_gene:
         """   
 
 
-# 注释：子工作流，对不同batch的数据进行read separation;如果有其他来源的差异SNP，即则Differetial_SNPs_from_other_source非空，则使用该SNP进行read separation
-# 注释：其实这一个代码中已经有测试了...即readseparation_barcode_list1可供选择
+# Note: Sub-workflow performs read separation on data from different 
+    # batches; if there are differentiating SNPs from other sources 
+    # (i.e., Differential_SNPs_from_other_source is not empty), then 
+    # use that SNP for read separation.
+# Note: This has actually been tested in this code... i.e., 
+    # readseparation_barcode_list1 is selectable.
 rule read_separation_sub_pipeline:
     input:
         yaml = os.path.join(SUB_CONFIG_FILES, "batch{i}_config.yaml"),
