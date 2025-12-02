@@ -41,7 +41,7 @@ CHUNK_SIZE=15000000
 # VCF 提取区域右侧扩展 bp 数量
 VCF_EXTEND=2000
 # 并行运行的任务数，请根据实际情况调整
-NPROC=40
+NPROC=25
 
 # 在脚本开头记录开始时间
 start_time=$(date +%s)

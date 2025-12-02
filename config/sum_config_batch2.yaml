@@ -58,7 +58,7 @@ reference:
 # 注释：如果有多个数据集，则需要调整Multi_batches参数，默认是1
 # 在多个数据集的情况下，需要在下面的sequence_files、annotation、zUMIs_barcode_list中添加对应的文件
 Multi_batches: 1
-num_threads: 25
+num_threads: 30
 
 
 
@@ -93,7 +93,7 @@ sequence_files2:
       - BC(101-120)
 
 # 2) zUMIs运行参数 ------------------------------------
-mem_limit: 800
+mem_limit: 360
 
 # 在常规情况下，No need to modify parameters after this line
 # 3) zUMIs基础参数 ------------------------------------

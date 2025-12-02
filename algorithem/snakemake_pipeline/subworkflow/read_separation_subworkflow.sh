@@ -112,12 +112,13 @@ echo "Splitting BAM files for cell types..."
 # 分离 CellType1 和 CellType2 的 BAM 文件
 #$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
 #$SEPARATE_BAM_SCRIPT "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" $RUN_BAM_FILE $CHUNK_COMBINED_OUTPUT 30
-samtools view -@ 30 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_separated_bam.txt"
-samtools view -@ 30 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_separated_bam.txt"
+samtools view -@ 25 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE1}_separated_bam.bam"
+samtools view -@ 25 -N "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_readID.txt" -b $RUN_BAM_FILE -o "$CHUNK_COMBINED_OUTPUT/${CELLTYPE2}_separated_bam.bam"
 
-echo "Counting reads number for each cell before read separation..."
-READCOUNT_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/read_per_cell_from_bam.sh"
-READCOUNT_CSV="$CHUNK_COMBINED_OUTPUT/read_count_per_cell_basedon_bam.csv"
-bash $READCOUNT_SCRIPT $RUN_BAM_FILE $READCOUNT_CSV 30
+# 这个代码是没问题的，就是太耗时间了，所以这次先把它取消掉算了
+#echo "Counting reads number for each cell before read separation..."
+#READCOUNT_SCRIPT="$algorithem_path/DoubletSeparation_SNPbased_v1.0/read_per_cell_from_bam.sh"
+#READCOUNT_CSV="$CHUNK_COMBINED_OUTPUT/read_count_per_cell_basedon_bam.csv"
+#bash $READCOUNT_SCRIPT $RUN_BAM_FILE $READCOUNT_CSV 30
 
 echo "Pipeline completed successfully."

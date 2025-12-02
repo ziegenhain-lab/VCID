@@ -273,9 +273,9 @@ rule read_separation_sub_pipeline:
         read_assignment_result = os.path.join(Data_results_path, "batch{i}_results", 
                         "read_separation_results","chunk_combined_output", "all_out_read.txt"),
         celltype1_separated_bam_path = os.path.join(Data_results_path, "batch{i}_results", 
-                        "read_separation_results","chunk_combined_output", f"{CELLTYPE1}_readID_separated_bam.bam"),
+                        "read_separation_results","chunk_combined_output", f"{CELLTYPE1}_separated_bam.bam"),
         celltype2_separated_bam_path = os.path.join(Data_results_path, "batch{i}_results", 
-                        "read_separation_results","chunk_combined_output", f"{CELLTYPE2}_readID_separated_bam.bam")
+                        "read_separation_results","chunk_combined_output", f"{CELLTYPE2}_separated_bam.bam")
     conda:
         COMMON_VCID_CONFIG
     params:
