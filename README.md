@@ -1,4 +1,4 @@
-  # VCID4.0
+  # VCID
 
 **V**ariant-based **C**ell-cell **I**nteraction **D**econvoluting(VCID)
 
