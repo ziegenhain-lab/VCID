@@ -5,5 +5,5 @@ config/sum_config_batch1.yaml
 config/sum_config_batch2.yaml
 config/sum_config_batch3.yaml
 config/sum_config_back_up.yaml
-
+algorithm/snakemake_pipeline/basic/Metadata_integrating.ipynb
 
