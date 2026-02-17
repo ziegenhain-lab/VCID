@@ -5,7 +5,6 @@
 ## Abstract
 
 This pipeline is called VCID, which stands for cell cell interaction deconvoluting. It is a pipeline for analyzing cell-cell interactions with single-cell transcriptome data.
-For downstream analysis code, please refer to: https://github.com/ziegenhain-lab/T-cell-dynamics-analysis
 
 Note: This pipeline is still under development 2025.6.21
 

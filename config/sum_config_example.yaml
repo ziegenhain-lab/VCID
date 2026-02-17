@@ -1,0 +1,151 @@
+# This program relies on two Docker images: one for all programs except zUMIs, and the other for zUMIs (currently, the latter is under testing, while the former is under development...).
+
+# Therefore, the YAML file is divided into two parts. The first part is required; the second part is only required when using zUMIs.
+
+# Note: This pipeline can be used in several situations:
+
+# 1) If only the RNA-seq fastq file is provided, the program will default to running zUMIs to generate a BAM file and performing SNP calling based on the BAM file to obtain a VCF file.
+
+# 2) If the RNA-seq fastq file and an additional VCF file are provided, the program will only run zUMIs to generate a BAM file and perform read separation based on the additional VCF file.
+
+# 3) If both the BAM file and an additional VCF file are provided, the program will directly perform read separation.
+
+# For cases 1) and 2), the information in part 2 needs to be completed.
+
+### ------------------------------------------------------- Part 2 ---------------------------------------------------------------------
+
+# 1) Basic Information ------------------------------------
+
+# Note: celltype1 and celltype2 refer to the cell types used in the experiment and must be consistent with the Sort_Population column annotation in the annotation.
+project: VCID
+celltype1: Tsc
+celltype2: Nalm6sc
+celltype3: Nalm6-T
+
+# 2) Program Address ------------------------------------
+
+# zUMIs_directory is for calling the locally packaged zUMIs; zUMIs_container is for further encapsulation into a Docker container.
+pipeline_path: .../VCID4.0-n.n_pipeline_folder/VCID4.0
+zUMIs_directory: 
+
+# 3) Data Address ------------------------------------
+
+# a. Core Data ------------
+
+# Note: Differential_SNPs_from_other_source defaults to empty, meaning SNP calling is performed directly from RNA. If SNP data from other sources is available, the original SNP calling step can be skipped.
+
+# Note: BAM_file_from_other_source defaults to empty, meaning zUMIs is run based on fastq. If BAM data from other sources is available, the zUMIs step can be skipped.
+Differetial_SNPs_from_other_source: .../....vcf.gz
+#Differetial_SNPs_from_other_source: 
+BAM_file_from_other_source: .../....bam
+#BAM_file_from_other_source: .../T_cell_dynamics_20kcells_results_extracted_bam/Nalm6-T_et4R0J.bam
+out_dir: .../...
+
+# b.metadata ------------
+
+# Note: Annotation information stores the barcode list and corresponding cell type information (Sort_Population column)
+
+# Note: There are three places in the entire analysis file where the barcode list needs to be selected. The first is when using zUMIs (a file needs to be provided: zUMIs_barcode_list; in the original zUMIs yaml file, it is named barcodes$barcode_file);
+
+# The second is when preparing a single BAM file for SNP calling (no file needs to be provided, the program will automatically generate it based on sort_population);
+
+# [Optional] The third is when performing readseparation, where you need to specify which cells should be read separated (a file needs to be provided: readseparation_barcode_list). If left blank, all cells will be read separated by default, and the program will directly reference the previous zUMIs_barcode_list.
+annotation1: 
+annotation2: 
+zUMIs_barcode_list1:
+zUMIs_barcode_list2:
+#zUMIs_barcode_list1: .../T_cell_dynamics_20kcells_results/metadata/expected_barcodes_pool1_pool2.txt
+#zUMIs_barcode_list2: .../T_cell_dynamics_20kcells_results/metadata/expected_barcodes_pool1_pool2.txt
+readseparation_barcode_list1: 
+readseparation_barcode_list2: 
+
+# c.reference data ------------
+# Note: Except for GTF_file, other files in the reference do not need to be provided.
+reference:
+  STAR_index: 
+  GTF_file: 
+  additional_STAR_params: '--clip3pAdapterSeq CTGTCTCTTATACACATCT --limitOutSJcollapsed 3000000'
+  reference_genome: .../.../hg38.primary_assembly.fa
+  #reference_genome: /dev/null
+  additional_files:
+
+# 4) Runtime Parameters ------------------------------------
+
+# Note: If there are multiple datasets, the Multi_batches parameter needs to be adjusted. The default value is 1.
+
+# In the case of multiple datasets, the corresponding files need to be added to sequence_files, annotation, and zUMIs_barcode_list below.
+Multi_batches: 1
+num_threads: 25
+
+
+
+# If you need to use zUMIs, please add the following parameters.
+### ------------------------------------------------------- Part2 ---------------------------------------------------------------------
+
+# 1) sequence_files ------------------------------------
+sequence_files1:
+  file1:
+    name: .../....fq.gz
+    base_definition:
+      - cDNA(25-100)
+      - UMI(12-21)
+    find_pattern: ATTGCGCAATG;2
+  file2:
+    name: .../....fq.gz
+    base_definition:
+      - cDNA(1-100)
+      - BC(101-120)
+
+sequence_files2:
+  file1:
+    name: .../....fq.gz
+    base_definition:
+      - cDNA(25-100)
+      - UMI(12-21)
+    find_pattern: ATTGCGCAATG;2
+  file2:
+    name: .../....fq.gz
+    base_definition:
+      - cDNA(1-100)
+      - BC(101-120)
+
+# 2) zUMIs runtime parameters ------------------------------------
+mem_limit: 800
+
+# Under normal circumstances, there is no need to modify parameters after this line.
+
+# 3) zUMIs basic parameters ------------------------------------
+filter_cutoffs:
+  BC_filter:
+    num_bases: 5
+    phred: 20
+  UMI_filter:
+    num_bases: 4
+    phred: 20
+
+barcodes:
+  barcode_num: ~
+  barcode_file:
+  automatic: yes
+  BarcodeBinning: 1
+  demultiplex: no
+  nReadsperCell: 100
+  discardReads: yes
+counting_opts:
+  introns: yes
+  downsampling: '0'
+  strand: 1
+  Ham_Dist: 1
+  velocyto: no
+  primaryHit: yes
+  twoPass: no
+make_stats: yes
+which_Stage: Filtering
+samtools_exec: samtools
+pigz_exec: pigz
+STAR_exec: STAR
+Rscript_exec: Rscript
+read_layout: PE
+
+
+

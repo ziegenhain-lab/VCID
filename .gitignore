@@ -1,3 +1,9 @@
-algorithem/snakemake_pipeline/.snakemake/
+algorithm/snakemake_pipeline/.snakemake/
 algorithem/snakemake_pipeline/logs/
+config/sum_config.yaml
+config/sum_config_batch1.yaml
+config/sum_config_batch2.yaml
+config/sum_config_batch3.yaml
+config/sum_config_back_up.yaml
+
 

@@ -124,7 +124,7 @@ variant_parsing_new <- function(reads, variant_positions){
 
 
 SNPdeconv_new <- function(vcf_chunk, reads_chunk){
-  tic("Subprocess，variant_parsing time")
+  tic("Subprocess, variant_parsing time")
   out_vars <- variant_parsing_new(reads = reads_chunk, variant_positions = vcf_chunk$POS)
   toc()
   
@@ -160,7 +160,7 @@ SNPdeconv_new <- function(vcf_chunk, reads_chunk){
   toc()
   
   # Finally, a majority vote is conducted by grouping by read.
-  tic("子流程，read_decision & 汇总耗时")
+  tic("Sub-process, read_decision & summarizing time consumption")
   out_reads <- out_vars[, .(
     readcall = {
       tb <- tabulate(match(basecall2, unique(basecall2)))
@@ -195,7 +195,7 @@ toc()
 message("Done reading VCF chunk.")
 
 # ----------------------------
-tic("Load BAM reads耗时")
+tic("Load BAM reads:")
 message("Loading reads from BAM...")
 reads_chunk <- load_reads_from_bam(path_bam = opt$bam)
 toc()
@@ -208,7 +208,7 @@ if (nrow(reads_chunk) == 0) {
 message(sprintf("Loaded %d reads.", nrow(reads_chunk)))
 
 # ----------------------------
-tic("SNP-based read separation总耗时")
+tic("SNP-based read separation:")
 message("Performing SNP-based read separation...")
 out_reads <- SNPdeconv_new(vcf_chunk = vcf, reads_chunk = reads_chunk)
 toc()
