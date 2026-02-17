@@ -100,4 +100,4 @@ snakemake -R your_rule_name --touch
 ```
 
 ## Flow chart of VCID
-![alt text](algorithem/workflow_demo/mermaid-diagram-2025-06-18-130830.png)
+![alt text](algorithm/workflow_demo/mermaid-diagram-2025-06-18-130830.png)
